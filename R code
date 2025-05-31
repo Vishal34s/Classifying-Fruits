@@ -1,0 +1,67 @@
+# Required Libraries 
+library(shiny) 
+library(ggplot2) 
+library(dplyr) 
+library(colourpicker)  # For colourInput widget 
+# Define UI 
+ui <- fluidPage( 
+titlePanel("   
+Fruit Classifier: Apple vs Orange Based on Size & Color"), 
+sidebarLayout( 
+sidebarPanel( 
+fileInput("file", "   
+".csv"), 
+Upload CSV File (with Size & ColorScore columns)", accept = 
+h4("Classification Thresholds"), 
+numericInput("sizeThreshold", "Size Threshold:", value = 7.0, min = 1, max = 15, 
+step = 0.1), 
+numericInput("colorThreshold", "Color Score Threshold:", value = 5.0, min = 1, 
+max = 10, step = 0.1), 
+h4("Choose Plot Colors"), 
+colourInput("appleColor", "Apple Color:", value = "red"), 
+colourInput("orangeColor", "Orange Color:", value = "orange"), 
+br(), 
+actionButton("run", "        
+Classify Fruits", class = "btn btn-success"), 
+br(), br(), 
+helpText("Fruits with size > threshold and color score > threshold are classified as 
+Apple. Others as Orange.") 
+), 
+mainPanel( 
+tabsetPanel( 
+Data", tableOutput("dataTable")), 
+tabPanel("         
+tabPanel("      
+) 
+) 
+) 
+) 
+# Define Server 
+Classification Plot", plotOutput("fruitPlot")) 
+server <- function(input, output) { 
+userData <- eventReactive(input$run, { 
+req(input$file) 
+df <- read.csv(input$file$datapath) 
+req("Size" %in% names(df), "ColorScore" %in% names(df)) 
+# Classification logic 
+df$Prediction <- ifelse(df$Size > input$sizeThreshold & df$ColorScore > 
+input$colorThreshold,  
+"Apple", "Orange") 
+df 
+}) 
+output$dataTable <- renderTable({ 
+userData() 
+}) 
+output$fruitPlot <- renderPlot({ 
+df <- userData() 
+ggplot(df, aes(x = Size, y = ColorScore, color = Prediction)) + 
+geom_point(size = 4, alpha = 0.8) + 
+scale_color_manual(values = c("Apple" = input$appleColor, "Orange" = 
+input$orangeColor)) + 
+labs(title = "Fruit Classification Result", 
+x = "Size", y = "Color Score") + 
+theme_minimal() 
+}) 
+} 
+# Run the App 
+shinyApp(ui = ui, server = server)
